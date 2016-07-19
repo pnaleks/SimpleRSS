@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Simple RSS</string>
+    <string name="command_entry_hint">RSS feed URL</string>
+    <string name="card_image_content_description">RSS item enclosed image</string>
+</resources>

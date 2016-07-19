@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="2dp"
+    card_view:cardElevation="1dp"
+    card_view:contentPadding="4dp"
+    card_view:cardCornerRadius="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#ffffff">
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="#40000000">
+
+            <ImageView
+                android:id="@+id/image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_photo_camera_white_48dp"
+                android:contentDescription="@string/card_image_content_description"/>
+
+            <android.support.v4.widget.ContentLoadingProgressBar
+                android:id="@+id/progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/Widget.AppCompat.ProgressBar"/>
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:layout_gravity="top|start"
+            android:textColor="#d0000000"
+            android:textSize="14sp"
+            android:maxLines="8"
+            android:gravity="top|start"/>
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>
