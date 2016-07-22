@@ -19,32 +19,28 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.net.URI;
-import java.net.URL;
+import org.simpleframework.xml.Attribute;
+import org.simpleframework.xml.Element;
+import org.simpleframework.xml.ElementList;
+import org.simpleframework.xml.Root;
+import org.springframework.web.client.RestTemplate;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import dagger.Module;
 import dagger.Provides;
-import nl.matshofman.saxrssreader.RssItem;
-import nl.matshofman.saxrssreader.RssReader;
 
 @Module
-public class UrlRssPresenter implements RssPresenter {
-    static final String DEFAULT_URI_SCHEME = "https";
-
+public class SpringRssPresenter implements RssPresenter {
+    private RssViewer rssViewer;
+    private ArrayList<Item> items;
     private HashMap<String, Bitmap> map = new HashMap<>();
 
-    private RssViewer rssViewer;
-    private String urlString;
-    ArrayList<RssItem> rssItems;
-
     @Provides
-    static RssPresenter provideRssPresenter() {
-        return new UrlRssPresenter();
+    public static RssPresenter provideRssPresenter() {
+        return new SpringRssPresenter();
     }
-
-    public UrlRssPresenter() {}
 
     @Override
     public void setRssViewer(RssViewer rssViewer) {
@@ -53,26 +49,15 @@ public class UrlRssPresenter implements RssPresenter {
 
     @Override
     public void getFeed(final String uriString) {
-        URI uri = URI.create(uriString);
-        String scheme = uri.getScheme();
-        if( scheme == null ) {
-            String fix = DEFAULT_URI_SCHEME +':';
-            if( uri.getAuthority() == null ) {
-                fix += "//";
-            }
-            uri = URI.create(fix + uriString);
-        }
-        urlString = uri.toString();
-        if( (uri.getPath() == null || uri.getPath().isEmpty())
-                && (uri.getQuery() == null || uri.getQuery().isEmpty())
-                && (uri.getFragment() == null || uri.getFragment().isEmpty()) ) urlString += '/';
-
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 Runnable callback;
                 try {
-                    rssItems = RssReader.read(new URL(urlString)).getRssItems();
+                    RestTemplate restTemplate = new RestTemplate();
+                    Rss rss = restTemplate.getForObject(uriString, Rss.class);
+                    items = rss.channel == null ? null : rss.channel.items;
+                    if( items == null ) throw new Exception("Cant't get rss from " + uriString);
                     callback = new Runnable() {
                         @Override
                         public void run() {
@@ -92,30 +77,29 @@ public class UrlRssPresenter implements RssPresenter {
             }
         };
         new Thread(runnable).start();
-
     }
 
     @Override
     public int getItemCount() {
-        return rssItems == null ? 0 : rssItems.size();
+        return items == null ? 0 : items.size();
     }
 
     @Override
     public String getItemTitle(int position) {
-        if( rssItems == null ) return null;
-        return rssItems.get(position).getTitle();
+        return items == null ? null : items.get(position).title;
     }
 
     @Override
     public String getItemDescription(int position) {
-        if( rssItems == null ) return null;
-        return rssItems.get(position).getDescription();
+        return items == null ? null : items.get(position).description;
     }
 
     @Override
     public boolean loadImage(final Object target, final int position) {
-        if( rssItems == null ) return false;
-        final String urlString = rssItems.get(position).getImageUrl();
+        if( items == null ) return false;
+        Enclosure enclosure = items.get(position).enclosure;
+        if( enclosure == null || !enclosure.type.startsWith("image/") ) return false;
+        final String urlString = items.get(position).enclosure.url;
         if( urlString == null ) return false;
         if( map.containsKey(urlString) ) {
             rssViewer.displayImage(target, position, map.get(urlString) );
@@ -129,5 +113,30 @@ public class UrlRssPresenter implements RssPresenter {
 
         });
         return true;
+    }
+
+    @Root
+    public static class Rss {
+        @Attribute public float version;
+
+        @Element public Channel channel;
+    }
+
+    @Root(strict = false)
+    public static class Channel {
+        @ElementList(inline = true) public ArrayList<Item> items;
+    }
+
+    @Root(strict = false)
+    public static class Item {
+        @Element(required = false) public String title;
+        @Element(required = false) public String description;
+        @Element(required = false) public Enclosure enclosure;
+    }
+
+    @Root(strict = false)
+    public static class Enclosure {
+        @Attribute public String url;
+        @Attribute public String type;
     }
 }
