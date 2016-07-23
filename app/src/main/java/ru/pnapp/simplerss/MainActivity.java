@@ -160,7 +160,8 @@ public class MainActivity extends AppCompatActivity implements
 
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        mInputText = sharedPreferences.getString(PREF_INPUT_TEXT, "");
+        mInputText = mRssPresenter.getFeed();
+        if( mInputText == null ) mInputText = sharedPreferences.getString(PREF_INPUT_TEXT, "");
 
         mAutoCompleteSet = (HashSet<String>) sharedPreferences.getStringSet(PREF_AUTO_COMPLETE_SET, new HashSet<String>());
         mAutoCompleteAdapter.addAll(mAutoCompleteSet);
@@ -184,6 +185,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mRssPresenter.setRssViewer(null);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -196,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onActionPlay(final String text) {
-        mEntryView.toggleAction();
+        mEntryView.setAction(CommandEntry.ACTION.STOP);
         mInputText = text;
         if( mAutoCompleteSet.add(text) ) mAutoCompleteAdapter.add(text);
         mRssPresenter.getFeed(text);
@@ -209,8 +216,8 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onDataReady() {
-        mEntryView.toggleAction();
         mRecyclerView.getAdapter().notifyDataSetChanged();
+        mEntryView.setAction(CommandEntry.ACTION.PLAY);
     }
 
     @Override
@@ -229,6 +236,6 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onError(String message) {
         Toast.makeText(this, "Error: " + message, Toast.LENGTH_LONG).show();
-        mEntryView.toggleAction();
+        mEntryView.setAction(CommandEntry.ACTION.PLAY);
     }
 }

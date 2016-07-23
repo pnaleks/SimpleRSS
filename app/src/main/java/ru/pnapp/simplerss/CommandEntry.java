@@ -47,7 +47,9 @@ import android.widget.TextView.OnEditorActionListener;
  * @author pnaleks@gmail.com
  */
 public class CommandEntry extends FrameLayout {
-	private ImageButton mButtonLeft;
+    public enum ACTION {STOP, PLAY}
+
+    private ImageButton mButtonLeft;
 	private ImageButton mButtonRight;
 	private AutoCompleteTextView mTextView;
 	
@@ -58,7 +60,7 @@ public class CommandEntry extends FrameLayout {
 	private int   mWidePadding;
 	
 	private boolean hasFocus;
-	private boolean isRunning;
+    private ACTION mAction = ACTION.PLAY;
 
     private Context mContext;
 	
@@ -122,28 +124,43 @@ public class CommandEntry extends FrameLayout {
 		mTextView.setAdapter(adapter);
 	}
 	
-	public void toggleAction() {
-		isRunning = !isRunning;
-		if (isRunning) {
-			mButtonLeft.setImageDrawable(mDrawableStop);
-			mTextView.setImeOptions(EditorInfo.IME_ACTION_DONE);
-		} else {
-			mButtonLeft.setImageDrawable(mDrawablePlay);
-			mTextView.setImeOptions(EditorInfo.IME_ACTION_GO);
-		}
+    private void setAction() {
+        switch( mAction ) {
+            case STOP:
+                mButtonLeft.setImageDrawable(mDrawableStop);
+                mTextView.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                break;
+            case PLAY:
+                mButtonLeft.setImageDrawable(mDrawablePlay);
+                mTextView.setImeOptions(EditorInfo.IME_ACTION_GO);
+                break;
+        }
+    }
+
+	public void setAction(ACTION action) {
+        mAction = action;
+        setAction();
 	}
-	
+
+    public void toggleAction() {
+        mAction = (mAction == ACTION.PLAY) ? ACTION.STOP : ACTION.PLAY;
+        setAction();
+    }
+
 	private void onLeftButton() {
-		if (isRunning) {
-            if( mContext instanceof Callback ) ((Callback) mContext).onActionStop();
-			else toggleAction();
-		} else {
-			String str = mTextView.getText().toString();
-			if ( !str.isEmpty() ) {
-                if( mContext instanceof Callback ) ((Callback) mContext).onActionPlay(str);
-				else toggleAction();
-			}
-		}
+        if( mContext instanceof Callback ) {
+            switch( mAction ) {
+                case STOP:
+                    ((Callback) mContext).onActionStop();
+                    break;
+                case PLAY:
+                    String str = mTextView.getText().toString();
+                    if ( !str.isEmpty() ) ((Callback) mContext).onActionPlay(str);
+                    break;
+            }
+        } else {
+            toggleAction();
+        }
 	}
 	
 	private void onRightButton() {
@@ -175,7 +192,7 @@ public class CommandEntry extends FrameLayout {
 		@Override
 		public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
             v.clearFocus();
-			if ( !isRunning ) { onLeftButton(); }
+			if ( mAction == ACTION.PLAY ) { onLeftButton(); }
 			return true;
 		}
 	};

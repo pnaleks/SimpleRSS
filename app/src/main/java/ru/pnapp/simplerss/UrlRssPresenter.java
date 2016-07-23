@@ -37,22 +37,23 @@ public class UrlRssPresenter implements RssPresenter {
 
     private RssViewer rssViewer;
     private String urlString;
-    ArrayList<RssItem> rssItems;
+    private ArrayList<RssItem> rssItems;
+
+    static UrlRssPresenter instance;
 
     @Provides
     static RssPresenter provideRssPresenter() {
-        return new UrlRssPresenter();
+        if( instance == null ) instance = new UrlRssPresenter();
+        return instance;
     }
 
     public UrlRssPresenter() {}
 
     @Override
-    public void setRssViewer(RssViewer rssViewer) {
-        this.rssViewer = rssViewer;
-    }
+    public synchronized void setRssViewer(RssViewer rssViewer) { this.rssViewer = rssViewer; }
 
     @Override
-    public void getFeed(final String uriString) {
+    public String getFeed(String uriString) {
         URI uri = URI.create(uriString);
         String scheme = uri.getScheme();
         if( scheme == null ) {
@@ -70,35 +71,27 @@ public class UrlRssPresenter implements RssPresenter {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                Runnable callback;
                 try {
                     rssItems = RssReader.read(new URL(urlString)).getRssItems();
-                    callback = new Runnable() {
-                        @Override
-                        public void run() {
-                            rssViewer.onDataReady();
-                        }
-                    };
-
+                    callOnDataReady();
                 } catch (final Exception e) {
-                    callback = new Runnable() {
-                        @Override
-                        public void run() {
-                            rssViewer.onError(e.getMessage());
-                        }
-                    };
+                    callOnError(e.getMessage());
                 }
-                new Handler(Looper.getMainLooper()).post( callback );
             }
         };
         new Thread(runnable).start();
-
+        return urlString;
     }
 
     @Override
-    public int getItemCount() {
-        return rssItems == null ? 0 : rssItems.size();
+    public String getFeed() {
+        if( urlString == null ) return null;
+        if( rssItems != null ) callOnDataReady();
+        return urlString;
     }
+
+    @Override
+    public int getItemCount() { return rssItems == null ? 0 : rssItems.size(); }
 
     @Override
     public String getItemTitle(int position) {
@@ -124,10 +117,32 @@ public class UrlRssPresenter implements RssPresenter {
             @Override
             public void onCompleted(Bitmap bitmap) {
                 map.put(urlString, bitmap);
-                rssViewer.displayImage(target, position, bitmap);
+                if( rssViewer != null ) rssViewer.displayImage(target, position, bitmap);
             }
 
         });
         return true;
+    }
+
+    private void callOnDataReady() {
+        if( rssViewer == null ) return;
+        Runnable callback = new Runnable() {
+            @Override
+            public void run() {
+                if( rssViewer != null ) rssViewer.onDataReady();
+            }
+        };
+        new Handler(Looper.getMainLooper()).post( callback );
+    }
+
+    private void callOnError(final String message) {
+        if( rssViewer == null ) return;
+        Runnable callback = new Runnable() {
+            @Override
+            public void run() {
+                if( rssViewer != null ) rssViewer.onError(message);
+            }
+        };
+        new Handler(Looper.getMainLooper()).post( callback );
     }
 }

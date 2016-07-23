@@ -19,8 +19,8 @@ import android.graphics.Bitmap;
 
 public interface RssPresenter {
     /**
-     * Initialize viewer
-     * @param rssViewer viewer to interact
+     * Initialize or free the viewer. Should be set to null when the viewer becomes unavailable such as at Activity.onDestroy()
+     * @param rssViewer viewer to interact or null
      */
     void setRssViewer(RssViewer rssViewer);
 
@@ -28,8 +28,16 @@ public interface RssPresenter {
      * Load RSS Feed data from an uri<br>
      * It should call {@link RssViewer#onDataReady()} upon completed
      * @param uriString uri to load
+     * @return uriString of the feed, probably fixed by the presenter
      */
-    void getFeed(String uriString);
+    String getFeed(String uriString);
+
+    /**
+     * Allows to reproduce the feed if it was obtained at previous call to {@link #getFeed(String)}<br>
+     * If data is available it should call {@link RssViewer#onDataReady()}
+     * @return uriString of that feed
+     */
+    String getFeed();
 
     /**
      * Gets number of items in the feed
