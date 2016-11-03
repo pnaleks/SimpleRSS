@@ -38,6 +38,9 @@ import android.widget.Toast;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
+import java.util.Observable;
+import java.util.Observer;
+
 import javax.inject.Inject;
 
 public class MainActivity extends AppCompatActivity {
@@ -94,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         public void onError() { if (progressBar != null) progressBar.hide(); }
     }
 
-    public static class Adapter extends RecyclerView.Adapter<ViewHolder> implements RssViewer, View.OnClickListener {
+    public static class Adapter extends RecyclerView.Adapter<ViewHolder> implements Observer, View.OnClickListener {
         MainActivity activity;
         RssPresenter rssPresenter;
 
@@ -122,20 +125,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onDataReady(RssPresenter rssPresenter) {
-            this.rssPresenter = rssPresenter;
-            activity.setTitle(rssPresenter.getTitle());
-            activity.hideProgress();
-            notifyDataSetChanged();
-        }
-
-        @Override
-        public void onError(String message) {
-            activity.hideProgress();
-            Toast.makeText(activity, "Error: " + message, Toast.LENGTH_LONG).show();
-        }
-
-        @Override
         public void onClick(View view) {
             if (rssPresenter != null) {
                 int position = (Integer) view.getTag();
@@ -151,6 +140,18 @@ public class MainActivity extends AppCompatActivity {
                         .commit();
             }
         }
+
+        @Override
+        public void update(Observable observable, Object o) {
+            activity.hideProgress();
+            if (o == null) {
+                rssPresenter = (RssPresenter) observable;
+                activity.setTitle(rssPresenter.getTitle());
+                notifyDataSetChanged();
+            } else {
+                Toast.makeText(activity, "Error: " + o, Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
 
@@ -161,7 +162,6 @@ public class MainActivity extends AppCompatActivity {
 
         DaggerRssPresenterComponent.create().inject(this);
 
-        //DrawerFragment drawerFragment = (DrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
         if (imageDefault == null) {
             imageDefault = ContextCompat.getDrawable(this, R.drawable.ic_photo_camera_white_48dp);
             imageBroken = ContextCompat.getDrawable(this, R.drawable.ic_broken_image_white_48dp);
@@ -171,8 +171,8 @@ public class MainActivity extends AppCompatActivity {
 
         drawerAdapter.setup(this);
 
-        mRssPresenter.addRssViewer(drawerAdapter);
-        mRssPresenter.addRssViewer(channelViewAdapter);
+        mRssPresenter.addObserver(drawerAdapter);
+        mRssPresenter.addObserver(channelViewAdapter);
 
         if (savedInstanceState == null) {
             String feed = PreferenceManager.getDefaultSharedPreferences(this).getString(DrawerAdapter.PREF_FEED, null);
@@ -187,6 +187,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        DrawerFragment drawerFragment = (DrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
+        drawerFragment.syncIndicator();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
     }
@@ -194,8 +201,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mRssPresenter.removeRssViewer(drawerAdapter);
-        mRssPresenter.removeRssViewer(channelViewAdapter);
+        mRssPresenter.deleteObservers();
     }
 
     @Override

@@ -6,7 +6,6 @@
 
     <!-- Per the design guidelines, navigation drawers should be between 240dp and 320dp -->
     <dimen name="navigation_drawer_width">280dp</dimen>
-    <dimen name="navigation_drawer_text_size_group">18sp</dimen>
-    <dimen name="navigation_drawer_text_size_title">22sp</dimen>
+    <dimen name="navigation_drawer_text_size_title">20sp</dimen>
     <dimen name="navigation_drawer_text_size">14sp</dimen>
 </resources>

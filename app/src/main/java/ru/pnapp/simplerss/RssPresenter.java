@@ -23,42 +23,26 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashSet;
+import java.util.Observable;
 
-abstract class RssPresenter {
-    /** The {@link RssViewer}s that displays contents of the feed */
-    private HashSet<RssViewer> viewers = new HashSet<>();
-
-    /** Url of last the feed */
+abstract class RssPresenter extends Observable {
+    /** Url of the last feed */
     private String urlString;
 
     String getUrlString() { return urlString; }
     void setUrlString(String urlString) { this.urlString = urlString; }
 
     /**
-     * Add the viewer. Should be removed with {@link #removeRssViewer(RssViewer)}
-     * when the viewer becomes unavailable such as at Activity.onDestroy()
-     *
-     * @param rssViewer viewer to interact or null
-     */
-    synchronized void addRssViewer(RssViewer rssViewer) { viewers.add(rssViewer); }
-
-    /**
-     * Remove the viewer.
-     * @param rssViewer object to remove
-     */
-    synchronized void removeRssViewer(RssViewer rssViewer) { viewers.remove(rssViewer); }
-
-    /**
      * Load RSS Feed data from an uri<br>
-     * It should call {@link RssViewer#onDataReady(RssPresenter)} upon completed
+     * On success tt should call {@link #onDataReady(String)} or {@link #onError(String)} otherwise.
+     *
      * @param uriString uri to load
      */
     abstract void getFeed(String uriString);
 
     /**
      * Allows to reproduce the feed if it was obtained at previous call to {@link #getFeed(String)}<br>
-     * If data is available it should call {@link RssViewer#onDataReady(RssPresenter)}
+     * If data is available it should call {@link #onDataReady(String)}
      */
     abstract void getFeed();
 
@@ -77,14 +61,14 @@ abstract class RssPresenter {
     abstract String getItemEnclosureUrl(int position);
     abstract String getItemLink(int position);
 
-    void callOnDataReady(final String requestUrlString) {
-        if( viewers.size() > 0 ) {
+    void onDataReady(final String requestUrlString) {
+        setChanged();
+        if(countObservers() > 0 ) {
             Runnable callback = new Runnable() {
                 @Override
                 public void run() {
                     if (requestUrlString.equals(urlString)) {
-                        for (RssViewer rssViewer : viewers)
-                            rssViewer.onDataReady(RssPresenter.this);
+                        notifyObservers();
                     }
                 }
             };
@@ -92,12 +76,13 @@ abstract class RssPresenter {
         }
     }
 
-    void callOnError(final String message) {
-        if( viewers.size() > 0 ) {
+    void onError(final String message) {
+        setChanged();
+        if( countObservers() > 0 ) {
             Runnable callback = new Runnable() {
                 @Override
                 public void run() {
-                    for (RssViewer rssViewer : viewers) rssViewer.onError(message);
+                    notifyObservers(message);
                 }
             };
             new Handler(Looper.getMainLooper()).post(callback);
@@ -141,5 +126,4 @@ abstract class RssPresenter {
         redirectCount = 0;
         return result;
     }
-
 }

@@ -1,15 +1,12 @@
 <resources>
     <string name="app_name">Simple RSS</string>
-    <string name="app_about">Just to be up to date</string>
-    <string name="command_entry_hint">RSS feed URL</string>
-    <string name="card_image_content_description">RSS item enclosed image</string>
+    <string name="app_about">Be up to date</string>
 
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
 
-    <string name="group_feed_set">Feeds list</string>
-    <string name="action_add_feed">Add feed</string>
+    <string name="action_add_feed">Add feed…</string>
 
-    <string name="open_in_browser">Open in browser</string>
-    <string name="share">Share</string>
+    <string name="open_in_browser">Open…</string>
+    <string name="share">Share…</string>
 </resources>

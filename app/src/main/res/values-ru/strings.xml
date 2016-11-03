@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Simple RSS</string>
+    <string name="action_add_feed">Добавить канал</string>
+    <string name="app_about">Будь в курсе</string>
+    <string name="drawer_close">Закрыть боковую панель</string>
+    <string name="drawer_open">Открыть боковую панель</string>
+    <string name="open_in_browser">Открыть…</string>
+    <string name="share">Отправить…</string>
+</resources>
