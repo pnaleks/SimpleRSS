@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    app:cardBackgroundColor="?attr/appTextColor"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:alpha="0.9">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:gravity="top|start"
+        android:text="@string/app_name"
+        android:textSize="@dimen/navigation_drawer_text_size_title"
+        android:textStyle="bold|italic"
+        android:textColor="?attr/appCardBackgroundColor"
+        android:ellipsize="marquee"
+        android:drawablePadding="8dp"
+        android:drawableLeft="@mipmap/ic_launcher"
+        android:drawableStart="@mipmap/ic_launcher"/>
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:paddingLeft="64dp"
+        android:paddingStart="64dp"
+        android:paddingBottom="8dp"
+        android:text="@string/app_about"
+        android:textSize="@dimen/navigation_drawer_text_size"
+        android:ellipsize="marquee"
+        android:maxLines="1"
+        android:textColor="?attr/appCardBackgroundColor"
+        tools:ignore="RtlSymmetry"/>
+</android.support.v7.widget.CardView>

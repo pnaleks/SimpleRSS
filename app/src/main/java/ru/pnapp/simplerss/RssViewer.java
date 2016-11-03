@@ -15,23 +15,14 @@
  */
 package ru.pnapp.simplerss;
 
-import android.graphics.Bitmap;
-
-public interface RssViewer {
+interface RssViewer {
     /**
-     * This function should be called from {@link RssPresenter} as a response on {@link RssPresenter#getFeed(String)}
+     * This function called from {@link RssPresenter} as a response on {@link RssPresenter#getFeed(String)}
      * when data loading has been completed
-     */
-    void onDataReady();
-
-    /**
-     * This function should be called from {@link RssPresenter} as a response on {@link RssPresenter#loadImage(Object, int)} when image loading has been completed
      *
-     * @param target object passed with {@link RssPresenter#loadImage(Object, int)}
-     * @param position integer passed with {@link RssPresenter#loadImage(Object, int)}
-     * @param bitmap image data obtained
+     * @param rssPresenter caller of {@link RssPresenter#getFeed(String)}
      */
-    void displayImage(Object target, int position, Bitmap bitmap);
+    void onDataReady(RssPresenter rssPresenter);
 
     /**
      * Called if error occurs

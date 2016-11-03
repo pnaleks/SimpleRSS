@@ -6,6 +6,13 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="appBackgroundColor">@color/grey_100</item>
+        <item name="appCardBackgroundColor">@color/grey_800</item>
+        <item name="appTextColor">@color/grey_50</item>
+        <item name="appHintColor">@color/grey_300</item>
+        <item name="appDrawerBackgroundColor">@color/grey_800</item>
+        <item name="appDrawerBackgroundColorPressed">@color/grey_600</item>
     </style>
 
 </resources>

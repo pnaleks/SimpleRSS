@@ -16,59 +16,51 @@
 package ru.pnapp.simplerss;
 
 import android.app.AlertDialog;
-import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
+import android.app.Fragment;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.ContentLoadingProgressBar;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.HashSet;
+import com.squareup.picasso.Callback;
+import com.squareup.picasso.Picasso;
 
 import javax.inject.Inject;
 
-public class MainActivity extends AppCompatActivity implements
-        CommandEntry.Callback, RssViewer {
-    public static final String PREF_AUTO_COMPLETE_SET = "pref_auto_complete_set";
-    public static final String PREF_INPUT_TEXT        = "pref_input_text";
+public class MainActivity extends AppCompatActivity {
+    static Drawable imageDefault;
+    static Drawable imageBroken;
 
-    private RecyclerView mRecyclerView;
+    static int imageWidth;
+    static int imageHeight;
 
-    /** Элемент ввода имени или адреса для Action Bar */
-    private CommandEntry mEntryView;
-    /** Содержит строки для автоподстановки */
-    private HashSet<String> mAutoCompleteSet;
-    /** Адаптер автоподстановки строки ввода */
-    private ArrayAdapter<String> mAutoCompleteAdapter;
-    /** Last user input */
-    private String mInputText;
+    DrawerAdapter drawerAdapter = new DrawerAdapter();
+    Adapter channelViewAdapter = new Adapter(this);
 
-    Drawable imageDefault;
-    Drawable imageBroken;
+    ProgressDialog progressDialog;
 
     @Inject
     RssPresenter mRssPresenter;
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder implements Callback {
         private TextView textView;
         private ImageView imageView;
         private ContentLoadingProgressBar progressBar;
-        private int expectedImagePosition = -1;
 
-        public ViewHolder(View itemView) {
+        ViewHolder(View itemView) {
             super(itemView);
             textView = (TextView) itemView.findViewById(R.id.text);
             imageView = (ImageView) itemView.findViewById(R.id.image);
@@ -76,166 +68,189 @@ public class MainActivity extends AppCompatActivity implements
             progressBar.show();
         }
 
-        public void setText(CharSequence text) {
-            if( textView != null ) textView.setText(text);
+        void setText(CharSequence text) { if( textView != null ) textView.setText(text); }
+
+        void setImage(String urlString) {
+            if (imageView != null) {
+                if (urlString == null) {
+                    imageView.setImageDrawable(imageDefault);
+                } else {
+                    progressBar.show();
+                    Picasso.with(imageView.getContext()).load(urlString)
+                            .resize(imageWidth, imageHeight)
+                            .centerInside()
+                            .placeholder(imageDefault)
+                            .error(imageBroken)
+                            .into(imageView, this);
+                    return;
+                }
+            }
+            if (progressBar != null) progressBar.hide();
         }
 
-        public void setImagePosition(int position) {
-            if( expectedImagePosition != position ) {
-                imageView.setImageDrawable(imageDefault);
-                progressBar.show();
-                expectedImagePosition = position;
-            }
-        }
-
-        public void setImage(Drawable image, int imagePosition) {
-            if( expectedImagePosition >= 0 && imagePosition == expectedImagePosition ) {
-                if (imageView != null) imageView.setImageDrawable(image);
-                if (progressBar != null) progressBar.hide();
-            }
-        }
+        @Override
+        public void onSuccess() { if (progressBar != null) progressBar.hide(); }
+        @Override
+        public void onError() { if (progressBar != null) progressBar.hide(); }
     }
 
-    public class Adapter extends RecyclerView.Adapter<ViewHolder> {
+    public static class Adapter extends RecyclerView.Adapter<ViewHolder> implements RssViewer, View.OnClickListener {
+        MainActivity activity;
+        RssPresenter rssPresenter;
+
+        Adapter(MainActivity activity) {this.activity = activity;}
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = getLayoutInflater().inflate(R.layout.card, parent, false);
-            view.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    int position = (Integer) view.getTag();
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle( mRssPresenter.getItemTitle(position) )
-                            .setMessage( mRssPresenter.getItemDescription(position))
-                            .show();
-                }
-            });
+            View view = activity.getLayoutInflater().inflate(R.layout.card, parent, false);
+            view.setOnClickListener(this);
             return new ViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            if( mRssPresenter == null ) return;
-            holder.setText( mRssPresenter.getItemTitle(position) );
-            holder.setImagePosition(position);
-            holder.itemView.setTag(position);
+            if( rssPresenter == null ) return;
 
-            if( !mRssPresenter.loadImage(holder, position) ) {
-                holder.setImage(imageDefault, position);
-            }
+            holder.setText(rssPresenter.getItemTitle(position));
+            holder.setImage(rssPresenter.getItemEnclosureUrl(position));
+            holder.itemView.setTag(position); // For onClick
         }
 
         @Override
         public int getItemCount() {
-            return mRssPresenter == null ? 0 : mRssPresenter.getItemCount();
+            return rssPresenter == null ? 0 : rssPresenter.getItemCount();
+        }
+
+        @Override
+        public void onDataReady(RssPresenter rssPresenter) {
+            this.rssPresenter = rssPresenter;
+            activity.setTitle(rssPresenter.getTitle());
+            activity.hideProgress();
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public void onError(String message) {
+            activity.hideProgress();
+            Toast.makeText(activity, "Error: " + message, Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onClick(View view) {
+            if (rssPresenter != null) {
+                int position = (Integer) view.getTag();
+                Fragment fragment = new ItemViewFragment.Builder(activity)
+                        .setTitle(rssPresenter.getItemTitle(position))
+                        .setText(rssPresenter.getItemDescription(position))
+                        .setImageUrl(rssPresenter.getItemEnclosureUrl(position))
+                        .setLink(rssPresenter.getItemLink(position))
+                        .build();
+                activity.getFragmentManager().beginTransaction()
+                        .replace(R.id.container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
         }
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        imageDefault = ContextCompat.getDrawable(this, R.drawable.ic_photo_camera_white_48dp);
-        imageBroken = ContextCompat.getDrawable(this, R.drawable.ic_broken_image_white_48dp);
-
-        mAutoCompleteAdapter = new ArrayAdapter<>(this, R.layout.list_item);
-
-        mEntryView = new CommandEntry(this);
-        mEntryView.setAdapter(mAutoCompleteAdapter);
-
         DaggerRssPresenterComponent.create().inject(this);
 
-        float width = 0.4F * getResources().getDisplayMetrics().widthPixels;
+        //DrawerFragment drawerFragment = (DrawerFragment) getSupportFragmentManager().findFragmentById(R.id.navigation_drawer);
+        if (imageDefault == null) {
+            imageDefault = ContextCompat.getDrawable(this, R.drawable.ic_photo_camera_white_48dp);
+            imageBroken = ContextCompat.getDrawable(this, R.drawable.ic_broken_image_white_48dp);
+            imageWidth = (int)(0.4F * getResources().getDisplayMetrics().widthPixels);
+            imageHeight = imageWidth / 2;
+        }
 
-        DaggerImageLoaderModelComponent.create().imageLoaderModel().setImageSize((int)width, (int)width * 2);
+        drawerAdapter.setup(this);
 
-        mRssPresenter.setRssViewer(this);
-    }
+        mRssPresenter.addRssViewer(drawerAdapter);
+        mRssPresenter.addRssViewer(channelViewAdapter);
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+        if (savedInstanceState == null) {
+            String feed = PreferenceManager.getDefaultSharedPreferences(this).getString(DrawerAdapter.PREF_FEED, null);
+            if (feed != null) getFeed(feed);
 
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-        mInputText = mRssPresenter.getFeed();
-        if( mInputText == null ) mInputText = sharedPreferences.getString(PREF_INPUT_TEXT, "");
-
-        mAutoCompleteSet = (HashSet<String>) sharedPreferences.getStringSet(PREF_AUTO_COMPLETE_SET, new HashSet<String>());
-        mAutoCompleteAdapter.addAll(mAutoCompleteSet);
-
-        mEntryView.setAdapter(mAutoCompleteAdapter);
-        mEntryView.setText(mInputText);
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        mRecyclerView.setAdapter(new Adapter());
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.container, ChannelViewFragment.newInstance())
+                    .commit();
+        } else {
+            mRssPresenter.getFeed();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
-        PreferenceManager.getDefaultSharedPreferences(this).edit()
-                .putStringSet(PREF_AUTO_COMPLETE_SET, mAutoCompleteSet)
-                .putString(PREF_INPUT_TEXT, mInputText)
-                .apply();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mRssPresenter.setRssViewer(null);
+        mRssPresenter.removeRssViewer(drawerAdapter);
+        mRssPresenter.removeRssViewer(channelViewAdapter);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayShowTitleEnabled(false);
-            actionBar.setDisplayShowCustomEnabled(true);
-            actionBar.setCustomView(mEntryView, new ActionBar.LayoutParams(ActionBar.LayoutParams.MATCH_PARENT, ActionBar.LayoutParams.WRAP_CONTENT));
-        }
+
         return true;
     }
 
     @Override
-    public void onActionPlay(final String text) {
-        mEntryView.setAction(CommandEntry.ACTION.STOP);
-        mInputText = text;
-        if( mAutoCompleteSet.add(text) ) mAutoCompleteAdapter.add(text);
-        mRssPresenter.getFeed(text);
-    }
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
 
-    @Override
-    public void onActionStop() {
-        Toast.makeText(this, "Stopping not yet implemented", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onDataReady() {
-        mRecyclerView.getAdapter().notifyDataSetChanged();
-        mEntryView.setAction(CommandEntry.ACTION.PLAY);
-    }
-
-    @Override
-    public void displayImage(Object target, int position, Bitmap bitmap) {
-        ViewHolder holder = (ViewHolder) target;
-        if( bitmap == null ) {
-            holder.setImage(imageBroken, position);
-        } else {
-            BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
-            bitmapDrawable.setTargetDensity(getResources().getDisplayMetrics());
-            holder.setImage(bitmapDrawable, position);
+        if( id == android.R.id.home ) {
+            if (getFragmentManager().getBackStackEntryCount() > 0) {
+                getFragmentManager().popBackStack();
+                return true;
+            }
         }
 
+        return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onError(String message) {
-        Toast.makeText(this, "Error: " + message, Toast.LENGTH_LONG).show();
-        mEntryView.setAction(CommandEntry.ACTION.PLAY);
+    public void onDrawerItemSelected(int position) {
+        DrawerAdapter.Item item = (DrawerAdapter.Item) drawerAdapter.getItem(position);
+
+        if (item.type != DrawerAdapter.ITEM_TYPE.ITEM) return;
+
+        getFragmentManager().popBackStack();
+
+        if (item.titleId == R.string.action_add_feed) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            final EditText editText = new EditText(this);
+            builder.setView(editText)
+                    .setTitle("Enter URL")
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            getFeed(editText.getText().toString());
+                        }
+                    })
+                    .show();
+            return;
+        }
+        getFeed(item.text);
+    }
+
+    void getFeed(String urlString) {
+        progressDialog = ProgressDialog.show(this,null,urlString,true);
+        mRssPresenter.getFeed(urlString);
+    }
+
+    void hideProgress() {
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+            progressDialog = null;
+        }
     }
 }

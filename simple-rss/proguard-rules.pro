@@ -15,14 +15,3 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
-
-#-keepclassmembers class nl.matshofman.saxrssreader.* { public *; }
-
--libraryjars <java.home>/lib/rt.jar(java/**,javax/**)
-
--keep class ru.pnapp.simple_rss.** { *; }
--keep class org.simpleframework.xml.** { *; }
--keep class com.squareup.picasso.** { *; }
--keep class android.support.v7.widget.ShareActionProvider { *; }
-
--dontwarn com.squareup.okhttp.**

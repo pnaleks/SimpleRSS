@@ -18,8 +18,9 @@ package ru.pnapp.simplerss;
 import dagger.Component;
 
 @Component(
-        modules = UrlRssPresenter.class
+        //modules = UrlRssPresenter.class
+        modules = SimpleRssPresenter.class
 )
-public interface RssPresenterComponent {
+interface RssPresenterComponent {
     void inject(MainActivity activity);
 }
