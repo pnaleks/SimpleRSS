@@ -34,7 +34,7 @@ abstract class RssPresenter extends Observable {
 
     /**
      * Load RSS Feed data from an uri<br>
-     * On success tt should call {@link #onDataReady(String)} or {@link #onError(String)} otherwise.
+     * On success it should call {@link #onDataReady(String)} or {@link #onError(String)} otherwise.
      *
      * @param uriString uri to load
      */

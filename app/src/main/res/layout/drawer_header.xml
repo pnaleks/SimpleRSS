@@ -16,12 +16,12 @@
         android:gravity="top|start"
         android:text="@string/app_name"
         android:textSize="@dimen/navigation_drawer_text_size_title"
-        android:textStyle="bold|italic"
+        android:textStyle="bold"
         android:textColor="?attr/appCardBackgroundColor"
         android:ellipsize="marquee"
         android:drawablePadding="8dp"
-        android:drawableLeft="@mipmap/ic_launcher"
-        android:drawableStart="@mipmap/ic_launcher"/>
+        android:drawableLeft="@drawable/ic_launcher"
+        android:drawableStart="@drawable/ic_launcher"/>
 
     <TextView
         android:id="@+id/text"

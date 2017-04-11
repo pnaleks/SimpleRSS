@@ -189,7 +189,7 @@ class DrawerAdapter extends BaseAdapter implements Observer {
     void setup(Context context) {
         if (headerItem == null) {
             headerItem = new Item(ITEM_TYPE.HEADER);
-            headerItem.iconId = R.mipmap.ic_launcher;
+            headerItem.iconId = R.drawable.ic_launcher;
             headerItem.titleId = R.string.app_name;
             headerItem.textId = R.string.app_about;
 
