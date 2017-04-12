@@ -74,7 +74,13 @@ class SimpleRssPresenter extends RssPresenter {
     }
 
     @Override
-    String getTitle() { return rssFeed.channel.title; }
+    void clear() {
+        rssFeed = null;
+        onClear();
+    }
+
+    @Override
+    String getTitle() { return rssFeed == null ? null : rssFeed.channel.title; }
 
     @Override
     public int getItemCount() {

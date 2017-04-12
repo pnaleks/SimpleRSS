@@ -9,4 +9,6 @@
 
     <string name="open_in_browser">Open…</string>
     <string name="share">Share…</string>
+    <string name="delete_feed">Delete feed</string>
+    <string name="format_delete_feed_alert">Feed %1$s will be deleted!</string>
 </resources>

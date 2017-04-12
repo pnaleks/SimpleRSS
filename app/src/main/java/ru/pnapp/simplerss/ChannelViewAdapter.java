@@ -84,7 +84,8 @@ class ChannelViewAdapter extends RecyclerView.Adapter<ViewHolder> implements
     public void update(Observable observable, Object o) {
         if (o == null) {
             rssPresenter = (RssPresenter) observable;
-            activity.setTitle(rssPresenter.getTitle());
+            String title = rssPresenter.getTitle();
+            activity.setTitle(title == null ? activity.getString(R.string.app_name) : title);
             notifyDataSetChanged();
         } else {
             Toast.makeText(activity, "Error: " + o, Toast.LENGTH_LONG).show();

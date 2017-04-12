@@ -24,6 +24,8 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -45,6 +47,7 @@ public class ChannelViewFragment extends Fragment {
         if (savedInstanceState != null && savedInstanceState.containsKey(LAYOUT_MANAGER_STATE)) {
             layoutManagerState = savedInstanceState.getParcelable(LAYOUT_MANAGER_STATE);
         }
+        setHasOptionsMenu(true);
     }
 
     @Nullable
@@ -67,6 +70,11 @@ public class ChannelViewFragment extends Fragment {
         activity.channelViewAdapter.setSwipeRefreshLayout(swipeRefreshLayout);
 
         return swipeRefreshLayout;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.channel_view_fragment, menu);
     }
 
     @Override

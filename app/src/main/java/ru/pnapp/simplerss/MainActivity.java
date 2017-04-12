@@ -17,12 +17,15 @@ package ru.pnapp.simplerss;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -47,17 +50,27 @@ public class MainActivity extends AppCompatActivity {
         mRssPresenter.addObserver(channelViewAdapter);
         mRssPresenter.addObserver(drawerAdapter);
 
-        if (savedInstanceState == null) {
-            String feed = PreferenceManager.getDefaultSharedPreferences(this).getString(DrawerAdapter.PREF_FEED, null);
-            if (feed != null) getFeed(feed);
+        String feed;
+        if (savedInstanceState != null) {
+            feed = savedInstanceState.getString(DrawerAdapter.PREF_FEED);
+            if (feed != null) {
+                if (feed.equals(mRssPresenter.getUrlString())) {
+                    mRssPresenter.getFeed();
+                } else {
+                    mRssPresenter.getFeed(feed);
+                }
+                return;
+            }
+        }
 
+        feed = PreferenceManager.getDefaultSharedPreferences(this).getString(DrawerAdapter.PREF_FEED, null);
+        if (feed != null) getFeed(feed);
+
+        if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .replace(R.id.container, ChannelViewFragment.newInstance())
                     .commit();
-        } else {
-            mRssPresenter.getFeed();
         }
-
     }
 
     @Override
@@ -70,6 +83,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(DrawerAdapter.PREF_FEED, mRssPresenter.getUrlString());
     }
 
     @Override
@@ -87,12 +106,43 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
+        if (id == R.id.delete_feed) {
+            final String url = mRssPresenter.getUrlString();
+            if (url != null) {
+                new AlertDialog.Builder(this)
+                        .setTitle(R.string.delete_feed)
+                        .setMessage(getString(R.string.format_delete_feed_alert, url))
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                                Set<String> feedSet = preferences.getStringSet(DrawerAdapter.PREF_FEED_SET, null);
+                                if (feedSet != null && feedSet.remove(url)) {
+                                    String feed = preferences.getString(DrawerAdapter.PREF_FEED, null);
+                                    SharedPreferences.Editor editor = preferences.edit();
+                                    editor.remove(url);
+                                    editor.putStringSet(DrawerAdapter.PREF_FEED_SET, feedSet);
+                                    if (url.equals(feed)) editor.putString(DrawerAdapter.PREF_FEED, null);
+                                    editor.apply();
+                                    drawerAdapter.setup(MainActivity.this);
+                                    mRssPresenter.clear();
+                                }
+                            }
+                        })
+                        .setNegativeButton(android.R.string.no, null)
+                        .show();
+            }
+
+            return true;
+        }
         if( id == android.R.id.home ) {
             if (getFragmentManager().getBackStackEntryCount() > 0) {
                 getFragmentManager().popBackStack();
                 return true;
             }
         }
+
+
 
         return super.onOptionsItemSelected(item);
     }

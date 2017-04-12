@@ -7,4 +7,6 @@
     <string name="drawer_open">Открыть боковую панель</string>
     <string name="open_in_browser">Открыть…</string>
     <string name="share">Отправить…</string>
+    <string name="delete_feed">Удалить канал</string>
+    <string name="format_delete_feed_alert">Канал %1$s будет удалён!</string>
 </resources>

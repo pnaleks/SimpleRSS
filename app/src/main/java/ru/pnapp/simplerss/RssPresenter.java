@@ -46,6 +46,7 @@ abstract class RssPresenter extends Observable {
      */
     abstract void getFeed();
 
+    abstract void clear();
 
     abstract String getTitle();
 
@@ -89,7 +90,23 @@ abstract class RssPresenter extends Observable {
         }
     }
 
+    void onClear() {
+        setChanged();
+        urlString = null;
+        if( countObservers() > 0 ) {
+            Runnable callback = new Runnable() {
+                @Override
+                public void run() {
+                    notifyObservers();
+                }
+            };
+            new Handler(Looper.getMainLooper()).post(callback);
+        }
+    }
+
     static String getUrlString(String uriString) {
+        if (uriString == null) return null;
+
         URI uri = URI.create(uriString);
         String scheme = uri.getScheme();
         if( scheme == null ) {
@@ -103,6 +120,7 @@ abstract class RssPresenter extends Observable {
         if( (uri.getPath() == null || uri.getPath().isEmpty())
                 && (uri.getQuery() == null || uri.getQuery().isEmpty())
                 && (uri.getFragment() == null || uri.getFragment().isEmpty()) ) urlString += '/';
+
         return urlString;
     }
 

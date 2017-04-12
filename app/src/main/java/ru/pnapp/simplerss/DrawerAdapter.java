@@ -35,7 +35,7 @@ import java.util.Observer;
 import java.util.Set;
 
 class DrawerAdapter extends BaseAdapter implements Observer {
-    private static final String PREF_FEED_SET = "pref_feed_set";
+    static final String PREF_FEED_SET = "pref_feed_set";
     static final String PREF_FEED = "pref_feed";
 
     private Item headerItem;
@@ -148,7 +148,8 @@ class DrawerAdapter extends BaseAdapter implements Observer {
 		return view;
 	}
 
-    private void updateItems(@NonNull String title, @NonNull String text) {
+    private void updateItems(String title, String text) {
+        if (title == null || text == null) return;
         for (Item old : mItems) {
             if (old.type == ITEM_TYPE.ITEM && text.equals(old.text) ) {
                 checkedItem = old;
@@ -163,7 +164,6 @@ class DrawerAdapter extends BaseAdapter implements Observer {
                 return;
             }
         }
-
 
         Item item = new Item(ITEM_TYPE.ITEM);
         item.iconId = R.drawable.ic_rss_feed_white_24dp;
